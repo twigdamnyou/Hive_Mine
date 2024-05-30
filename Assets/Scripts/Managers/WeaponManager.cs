@@ -118,12 +118,14 @@ public class WeaponManager : MonoBehaviour
         //Debug.Log(CurrentWeapon.canAttack);
         if (CurrentWeapon.canAttack == true)
         {
-            if (CurrentWeapon.weaponData.payload != null)
-            {
-                StartCoroutine(CurrentWeapon.FireWithDelay());
-                CurrentWeapon.canAttack = false;
-            }
+            StartCoroutine(CurrentWeapon.FireWithDelay());
+            CurrentWeapon.canAttack = false;
         }
+    }
+
+    public void DealBlowbackDamage()
+    {
+        owner.ForceDie();
     }
 
     public void AddWeapon(Weapon weapon)
@@ -140,5 +142,17 @@ public class WeaponManager : MonoBehaviour
         {
             weapons.Remove(weapon);
         }
+    }
+
+    public void UpgradeWeapon(Upgrade upgrade, string weaponName)
+    {
+        GetWeaponByName(weaponName).currentUpgrades.Add(upgrade);
+    }
+
+    public Weapon GetWeaponByName(string weaponName)
+    {
+        //TODO: loop through weapons/make a dictionary to fetch weapons by name
+
+        return null;
     }
 }

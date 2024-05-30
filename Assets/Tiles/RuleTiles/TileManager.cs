@@ -1,7 +1,7 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Rendering.Universal;
 using UnityEngine.Tilemaps;
 
 public class TileManager : MonoBehaviour
@@ -17,8 +17,9 @@ public class TileManager : MonoBehaviour
     public TileBase dirtTile;
 
     [Header("Type of ore that will spawn inside the mine and the frequency of that ores spawn")]
-    public TileBase oreTile;
+    public List<TileChanceEntry> oreTiles = new List<TileChanceEntry>();
     public float chanceForOre = 0.5f;
+    private float totalOreWeights;
 
     [Header("Does this mine have a secret/reward in it")]
     public bool secret = false;
@@ -28,6 +29,7 @@ public class TileManager : MonoBehaviour
     {
         tileMap = GetComponent<Tilemap>();
         instance = this;
+        CalculateOreWeights();
     }
 
     private void Start()
@@ -120,18 +122,85 @@ public class TileManager : MonoBehaviour
 
                 if (myTile.type != AdvancedRuleTile.TileType.Wall)
                 {
-                    //Debug.Log(myTile.type + " is not a wall tile");
-                    float chance = UnityEngine.Random.Range(0f, 1f);
-                    if (chance >= chanceForOre)
-                        tileMap.SetTile(postion, dirtTile);
-                    else
-                    {
-                        //Debug.Log(myTile.lootDrop == null);
-                        tileMap.SetTile(postion, oreTile);
-                    }
+                    tileMap.SetTile(postion, SelectRandomTile());
+
+                    //TileBase chosenTile = RollTileChance();
+                    //tileMap.SetTile(postion, chosenTile);
                 }
             }
         }
     }
 
+    public TileBase RollTileChance()
+    {
+        float chance = UnityEngine.Random.Range(0f, 1f);
+
+        //float lowestChance = float.MaxValue;
+
+        //TileBase tile = null;
+
+        for (int i = 0; i < oreTiles.Count; i++)
+        {
+            if (chance <= oreTiles[i].dropChance)
+            {
+                Debug.Log(oreTiles[i].tile.name + " Is the winner");
+                return oreTiles[i].tile;
+            }
+
+            //if (oreTiles[i].dropChance < lowestChance)
+            //{
+            //    lowestChance = oreTiles[i].dropChance;
+            //    if (chance <= lowestChance)
+            //    {
+            //        //Debug.Log(oreTiles[i].tile.name + " Is the winner");
+            //        tile = oreTiles[i].tile;
+            //    }
+            //}
+        }
+        //Debug.LogError("Forgot to put a tile of at least rarity 1 in the tile list");
+        return dirtTile;
+    }
+
+    private TileBase SelectRandomTile()
+    {
+        TileChanceEntry randomTile = oreTiles[GetRandomoOreIndex()];
+        Debug.Log(randomTile.tile.name + " is the winner");
+        return randomTile.tile;
+    }
+
+    private int GetRandomoOreIndex()
+    {
+        float roll = UnityEngine.Random.Range(0f, 1f) * totalOreWeights;
+
+        for (int i = 0; i < oreTiles.Count; i++)
+        {
+            if (oreTiles[i].Weight >= roll)
+            {
+                return i;
+            }
+        }
+
+        return 0;
+    }
+
+    private void CalculateOreWeights()
+    {
+        totalOreWeights = 0f;
+        foreach (TileChanceEntry entry in oreTiles)
+        {
+            totalOreWeights += entry.dropChance;
+            entry.Weight = totalOreWeights;
+        }
+    }
+}
+
+[System.Serializable]
+public class TileChanceEntry
+{
+    public TileBase tile;
+
+    [Range(0f, 100f)] 
+    public float dropChance;
+
+    public float Weight { get; set; }
 }

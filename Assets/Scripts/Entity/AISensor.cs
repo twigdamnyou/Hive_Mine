@@ -76,13 +76,15 @@ public class AISensor : MonoBehaviour
         return detectedTarget;
     }
 
-
     private void OnTargetDetected(Entity target)
     {
         LatestTarget = target;
 
         if (targets.Contains(target) == false)
             targets.Add(target);
+        
+        if (brain.WeaponManager.CurrentWeapon != null)
+            brain.WeaponManager.CurrentWeapon.target = target;
 
         //Debug.Log("Target Detected: " + target.gameObject.name);
     }

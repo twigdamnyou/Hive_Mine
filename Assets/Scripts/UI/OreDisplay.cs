@@ -16,14 +16,14 @@ public class OreDisplay : MonoBehaviour
         this.oreIcon.sprite = icon;
         this.ammountText.text = initialAmmount.ToString();
 
-        Debug.Log("recieved " + initialAmmount);
+        //Debug.Log("recieved " + initialAmmount);
     }
 
     public void UpdateOreValue(float newTotal)
     {
         ammountText.text = newTotal.ToString();
 
-        Debug.Log("updated " + newTotal);
+        //Debug.Log("updated " + newTotal);
     }
 
 }

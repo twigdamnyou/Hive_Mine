@@ -14,11 +14,18 @@ public class Gravity : MonoBehaviour
     {
         if (collision.tag == "Player" || collision.tag == "Ground Enemy")
         {
-            if(targets.Contains(collision.transform) == false)
+            if (targets.Contains(collision.transform) == false)
                 targets.Add(collision.transform);
 
             if (collision.tag == "Player")
+            {
                 GameManager.currentPlanet = planet;
+
+                EventData eventData = new EventData();
+                eventData.AddPlanet("Planet", planet);
+                EventManager.SendEvent(EventManager.GameEvent.PlayerEnteredAtmosphere, eventData);
+            }
+
             //Debug.Log("Detected Entering: " + collision.gameObject.name);
         }
     }
@@ -27,11 +34,18 @@ public class Gravity : MonoBehaviour
     {
         if (collision.tag == "Player" || collision.tag == "Ground Enemy")
         {
-            if (targets.Contains(collision.transform))            
+            if (targets.Contains(collision.transform))
                 targets.Remove(collision.transform);
 
             if (collision.tag == "Player")
+            {
                 GameManager.currentPlanet = null;
+
+                EventData eventData = new EventData();
+                eventData.AddPlanet("Planet", planet);
+                EventManager.SendEvent(EventManager.GameEvent.PlayerLeftAtmosphere, eventData);
+            }
+
 
             //Debug.Log("Detected Exiting: " + collision.gameObject.name);
         }

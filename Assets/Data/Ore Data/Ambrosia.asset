@@ -15,3 +15,4 @@ MonoBehaviour:
   itemName: Ambrosia
   itemIcon: {fileID: -798330496, guid: 75a171d877bdf684baad747c31c54c4e, type: 3}
   oreType: 6
+  prefab: {fileID: 3827878033633164138, guid: 0a5deb915553b6b4b84c3cfb96903d73, type: 3}

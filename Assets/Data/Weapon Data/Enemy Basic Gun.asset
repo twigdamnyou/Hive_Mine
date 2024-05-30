@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 06343d6c33d233546a2a008359a411cc, type: 3}
   m_Name: Enemy Basic Gun
   m_EditorClassIdentifier: 
-  payload: {fileID: 121305188229069, guid: 0228e2784130e434db052d08df87cf73, type: 3}
+  payload: {fileID: 121305188229069, guid: 564c6d741c87cc048840d250ef3eff49, type: 3}
   inputButton: 
   weaponName: Enemy Basic Gun
   weaponDescription: 

@@ -2,16 +2,22 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
+using static EnemyDatabase;
 
 public class SpawnManager : MonoBehaviour
 {
     public List<Wave> waves = new List<Wave>();
+    public bool waveActivelySpawning = false;
 
-    public float nextWaveTimer = 180f;
     public List<Vector2> spaceSpawnPoints = new List<Vector2>();
     public List<Vector2> planetSpawnPoints = new List<Vector2>();
-    //public List<Transform> tSpawnPoints = new List<Transform>();
-    public int enemiesPerWave = 3;
+
+    [Header("Wave parameters")]
+    public int currentWave = 1;
+    public int maxActiveEnemies = 20;
+    public float totalThreatPerWave = 20f;
+    public float maxSingleEnemyThreat = 1f;
+    private List<EnemyData> currentWaveValidEnemies = new List<EnemyData>();
 
     [Header("Spawn Cords Bounds")]
     public float lowerMin = -0.1f;
@@ -23,6 +29,7 @@ public class SpawnManager : MonoBehaviour
     [Header("Wave Timer")]
     public float waveTimerDuration = 300f;
     public Timer waveTimer;
+    public bool updateTimer = true;
 
     public EnemyDatabase enemyDatabase;
     public static SpawnManager instance;
@@ -30,6 +37,14 @@ public class SpawnManager : MonoBehaviour
     [Header("Testing")]
     public NPC testEnemy;
     public Transform spawnPoint;
+
+
+    //threat level allacation ammount
+    //singal enemy threat level max
+    //max number of enemies allowed active
+    //list all enemies being spawned during wave
+    //list should spread out threat level so i dont overwhelm player with high level enemies
+    //need to know when combat is on and off and include edge cases
 
     private void Awake()
     {
@@ -48,105 +63,132 @@ public class SpawnManager : MonoBehaviour
             SpawnWave();
         }
 
-        UpdateTimer(waveTimer, true);
+        if (Input.GetKeyDown(KeyCode.K))
+        {
+            EntityManager.KillAllEnemies();
+        }
+
+        if (updateTimer == true)
+        {
+            UpdateTimer(waveTimer, true);
+        }
+        else
+        {
+            UpdateTimer(waveTimer, false);
+        }
+    }
+
+    private void OnEnable()
+    {
+        EventManager.AddListener(EventManager.GameEvent.WaveEnded, UpdateTimer);
     }
 
     public void SpawnWave()
     {
-        int groundEnemiesCount = Random.Range(enemiesPerWave / 4, enemiesPerWave / 2);
-        int spaceEnemiesCount = enemiesPerWave - groundEnemiesCount;
+        PopulateCurrentWaveEnemies();
+
+        //int groundEnemiesCount = Random.Range(maxActiveEnemies / 4, maxActiveEnemies / 2);
+        //int spaceEnemiesCount = maxActiveEnemies - groundEnemiesCount;
+
+        StartCoroutine(SpawnEnemiesOnDelay());
+
+        //after spawning everything increase difficulty
+        totalThreatPerWave *= 1.25f;
+        if (maxSingleEnemyThreat == 5f)
+            maxSingleEnemyThreat = 5f;
+        else
+            maxSingleEnemyThreat += 1f;
+    }
+
+    public void PopulateCurrentWaveEnemies()
+    {
+        //clear Lists
+        currentWaveValidEnemies.Clear();
+
+        //determine number of enemies per threat catagory
+        float threatPartition = Mathf.Ceil(totalThreatPerWave / 3);
+        float topThreat = maxSingleEnemyThreat;
+        float midThreat = maxSingleEnemyThreat - 1f <= 0 ? 1f : maxSingleEnemyThreat - 1f;
+        float lowThreat = maxSingleEnemyThreat - 2f <= 0 ? 1f : maxSingleEnemyThreat - 4f;
+
+        int topPartitionCount = (int)Mathf.Ceil(threatPartition / topThreat);
+        int midPartitionCount = (int)Mathf.Ceil(threatPartition / midThreat);
+        int lowPartitionCount = (int)Mathf.Ceil(threatPartition / lowThreat);
 
         if (GameManager.currentPlanet != null)
         {
-            Debug.Log("spawning both Space and Ground enemies");
+            //populate list with both space enemies and ground enemies
+            List<EnemyData> allTopThreatEnemies = enemyDatabase.GetEnemiesByThreat(topThreat);
+            List<EnemyData> allMidThreatEnemies = enemyDatabase.GetEnemiesByThreat(midThreat);
+            List<EnemyData> allLoWThreatEnemies = enemyDatabase.GetEnemiesByThreat(lowThreat);
 
-            SpawnSpaceWave(spaceEnemiesCount);
-            SpawnGroundWave(groundEnemiesCount);
+            currentWaveValidEnemies.AddRange(PickEnemies(topPartitionCount, allTopThreatEnemies));
+            currentWaveValidEnemies.AddRange(PickEnemies(midPartitionCount, allMidThreatEnemies));
+            currentWaveValidEnemies.AddRange(PickEnemies(lowPartitionCount, allLoWThreatEnemies));
         }
         else
         {
-            Debug.Log("spawning only Space enemies");
+            //populate list with space enemies
+            List<EnemyData> spaceTopThreatEnemies = enemyDatabase.GetEnemies(EnemyType.Space, topThreat);
+            List<EnemyData> spaceMidThreatEnemies = enemyDatabase.GetEnemies(EnemyType.Space, midThreat);
+            List<EnemyData> spaceLoWThreatEnemies = enemyDatabase.GetEnemies(EnemyType.Space, lowThreat);
 
-            SpawnSpaceWave(enemiesPerWave);
+            currentWaveValidEnemies.AddRange(PickEnemies(topPartitionCount, spaceTopThreatEnemies));
+            currentWaveValidEnemies.AddRange(PickEnemies(midPartitionCount, spaceMidThreatEnemies));
+            currentWaveValidEnemies.AddRange(PickEnemies(lowPartitionCount, spaceLoWThreatEnemies));
         }
     }
 
-    public void SpawnSpaceWave(int spawncount)
+    private List<EnemyData> PickEnemies(int partitionCount, List<EnemyData> enemyList)
     {
-        Debug.Log("Spawning " + enemiesPerWave + "Space enemies Per Wave.");
-
-        StartCoroutine(SpawnEnemiesOnDelay(spawncount, EnemyDatabase.EnemyType.Space, 5f));
-    }
-
-    public void SpawnGroundWave(int spawncount)
-    {
-        if (GameManager.currentPlanet != null)
+        List<EnemyData> results = new List<EnemyData>();
+        if (enemyList.Count == 0)
         {
-            StartCoroutine(SpawnEnemiesOnDelay(spawncount, EnemyDatabase.EnemyType.Ground, 5f));
+            Debug.LogWarning("List of enemies to spawn this wave is empty");
+            return results;
         }
+            
 
-        Debug.Log("Spawning " + enemiesPerWave + "Ground enemies Per Wave.");
+        for (int i = 0; i < partitionCount; i++)
+        {
+            int randomIndex = Random.Range(0, enemyList.Count);
+            EnemyData enemyData = enemyList[randomIndex];
+            results.Add(enemyData);
+        }
+        return results;
     }
 
-    private IEnumerator SpawnEnemiesOnDelay(List<Vector2> spawnPoints, EnemyDatabase.EnemyType enemyType)
+    private IEnumerator SpawnEnemiesOnDelay()
     {
         WaitForSeconds waiter = new WaitForSeconds(0.2f);
+        WaitForEndOfFrame frameWaiter = new WaitForEndOfFrame();
 
-        for (int i = 0; i < enemiesPerWave; i++)
+        waveActivelySpawning = true;
+        updateTimer = false;
+
+        EventData eventData = new EventData();
+        eventData.AddBool("WaveStatus", true);
+        EventManager.SendEvent(EventManager.GameEvent.WaveStarted, eventData);
+
+        for (int i = 0; i < currentWaveValidEnemies.Count; i++)
         {
-            int randomIndex = Random.Range(0, spawnPoints.Count);
+            while (EntityManager.GetActiveEnemyCount() >= maxActiveEnemies)
+            {
+                yield return frameWaiter;
+            }
 
-            Vector2 targetPoint = spawnPoints[randomIndex];
-
-            InstantiateEnemy(targetPoint, enemyType, 1f);
+            if (currentWaveValidEnemies[i].enemyType == EnemyType.Space)
+                CreateSpaceEnemy(currentWaveValidEnemies[i]);
+            else
+                CreateGroundEnemy(currentWaveValidEnemies[i]);
 
             yield return waiter;
         }
 
-        spawnPoints.Clear();
+        waveActivelySpawning = false;
     }
 
-    private IEnumerator SpawnEnemiesOnDelay(int spawncount, EnemyDatabase.EnemyType enemyType, float threatLevel)
-    {
-        WaitForSeconds waiter = new WaitForSeconds(0.2f);
-
-        for (int i = 0; i < spawncount; i++)
-        {
-            switch (enemyType)
-            {
-                case EnemyDatabase.EnemyType.Space:
-                    CreateSpaceEnemy(threatLevel);
-                    break;
-                case EnemyDatabase.EnemyType.Ground:
-                    CreateGroundEnemy(threatLevel);
-                    break;
-            }
-
-            yield return waiter;
-        }
-    }
-
-
-    public void InstantiateEnemy(Vector2 spawnLocation, EnemyDatabase.EnemyType type, float threatLevel)
-    {
-        List<EnemyDatabase.EnemyData> validEnemiesByType = enemyDatabase.GetEnemiesByType(type);
-        List<GameObject> validEnemiesByThreat = new List<GameObject>();
-
-        for (int i = 0; i < validEnemiesByType.Count; i++)
-        {
-            if (validEnemiesByType[i].threatLevel <= threatLevel)
-            {
-                validEnemiesByThreat.Add(validEnemiesByType[i].prefab);
-            }
-        }
-
-        int randomIndex = Random.Range(0, validEnemiesByThreat.Count);
-        GameObject enemyPrefab = validEnemiesByThreat[randomIndex];
-
-        GameObject newEnemy = Instantiate(enemyPrefab, spawnLocation, Quaternion.identity);
-    }
-
-    public void CreateSpaceEnemy(float threatLevel)
+    public void CreateSpaceEnemy(EnemyData enemyData)
     {
         List<Vector2> currentCordList = GetRandomPos();
 
@@ -161,24 +203,18 @@ public class SpawnManager : MonoBehaviour
             }
         }
 
-        //Debug.Log(validPoints.Count + " Number of points in valid spawn list");
-        //for (int i = 0; i < validPoints.Count; i++)
-        //{
-        //    Debug.Log(validPoints[i] + " is a Valid point");
-        //}
-
         int randomIndex = Random.Range(0, validPoints.Count);
 
         Vector2 worldPosition = Camera.main.ViewportToWorldPoint(validPoints[randomIndex]);
 
-        InstantiateEnemy(worldPosition, EnemyDatabase.EnemyType.Space, threatLevel);
+        Instantiate(enemyData.prefab, worldPosition, Quaternion.identity);
     }
 
-    public void CreateGroundEnemy(float threatLevel)
+    public void CreateGroundEnemy(EnemyData enemyData)
     {
         Vector2 spawnPoint = GetRandomPlanetSpawnPoint();
 
-        InstantiateEnemy(spawnPoint, EnemyDatabase.EnemyType.Ground, threatLevel);
+        Instantiate(enemyData.prefab, spawnPoint, Quaternion.identity);
     }
 
     public List<Vector2> GetRandomPos()
@@ -231,7 +267,7 @@ public class SpawnManager : MonoBehaviour
             }
         }
 
-        for (int i = 0; i < enemiesPerWave; i++)
+        for (int i = 0; i < maxActiveEnemies; i++)
         {
             int randomInt = Random.Range(0, validPoints.Count);
 
@@ -323,6 +359,12 @@ public class SpawnManager : MonoBehaviour
         }
     }
 
+    public void UpdateTimer(EventData data)
+    {
+        waveTimer.UpdateClock();
+        updateTimer = true;
+    }
+
     private void UpdateTimer(Timer timer, bool shouldUpdate)
     {
         if (timer != null && shouldUpdate == true)
@@ -339,6 +381,127 @@ public class SpawnManager : MonoBehaviour
         //Debug.Log("currrent wave timer ratio at setup: " + waveTimer.RatioOfRemaining);
     }
 
+
+    #region Events
+
+
+    #endregion
+
+    #region Depricated Code
+
+    //public void SpawnSpaceWave(int spawncount)
+    //{
+    //    Debug.Log("Spawning " + maxActiveEnemies + "Space enemies Per Wave.");
+
+    //    StartCoroutine(SpawnEnemiesOnDelay(spawncount, EnemyDatabase.EnemyType.Space, 5f));
+    //}
+
+    //public void SpawnGroundWave(int spawncount)
+    //{
+    //    if (GameManager.currentPlanet != null)
+    //    {
+    //        StartCoroutine(SpawnEnemiesOnDelay(spawncount, EnemyDatabase.EnemyType.Ground, 5f));
+    //    }
+
+    //    Debug.Log("Spawning " + maxActiveEnemies + "Ground enemies Per Wave.");
+    //}
+
+    ////private IEnumerator SpawnEnemiesOnDelay(List<Vector2> spawnPoints, EnemyDatabase.EnemyType enemyType)
+    ////{
+    ////    WaitForSeconds waiter = new WaitForSeconds(0.2f);
+
+    ////    for (int i = 0; i < enemiesPerWave; i++)
+    ////    {
+    ////        int randomIndex = Random.Range(0, spawnPoints.Count);
+
+    ////        Vector2 targetPoint = spawnPoints[randomIndex];
+
+    ////        InstantiateEnemy(targetPoint, enemyType, 1f);
+
+    ////        yield return waiter;
+    ////    }
+
+    ////    spawnPoints.Clear();
+    ////}
+
+    //private IEnumerator SpawnEnemiesOnDelay(int spawncount, EnemyDatabase.EnemyType enemyType, float threatLevel)
+    //{
+    //    WaitForSeconds waiter = new WaitForSeconds(0.2f);
+
+    //    for (int i = 0; i < spawncount; i++)
+    //    {
+    //        switch (enemyType)
+    //        {
+    //            case EnemyDatabase.EnemyType.Space:
+    //                CreateSpaceEnemy(threatLevel);
+    //                break;
+    //            case EnemyDatabase.EnemyType.Ground:
+    //                CreateGroundEnemy(threatLevel);
+    //                break;
+    //        }
+
+    //        yield return waiter;
+    //    }
+    //}
+
+
+    //public void InstantiateEnemy(Vector2 spawnLocation, EnemyDatabase.EnemyType type, float threatLevel)
+    //{
+    //    List<EnemyDatabase.EnemyData> validEnemiesByType = enemyDatabase.GetEnemiesByType(type);
+    //    List<GameObject> validEnemiesByThreat = new List<GameObject>();
+
+    //    for (int i = 0; i < validEnemiesByType.Count; i++)
+    //    {
+    //        if (validEnemiesByType[i].threatLevel <= threatLevel)
+    //        {
+    //            validEnemiesByThreat.Add(validEnemiesByType[i].prefab);
+    //        }
+    //    }
+
+    //    int randomIndex = Random.Range(0, validEnemiesByThreat.Count);
+    //    GameObject enemyPrefab = validEnemiesByThreat[randomIndex];
+
+    //    GameObject newEnemy = Instantiate(enemyPrefab, spawnLocation, Quaternion.identity);
+    //}
+
+    //public void CreateSpaceEnemy(float threatLevel)
+    //{
+    //    List<Vector2> currentCordList = GetRandomPos();
+
+    //    List<Vector2> validPoints = new List<Vector2>();
+
+    //    for (int i = 0; i < currentCordList.Count; i++)
+    //    {
+    //        bool result = DetectBlockersforSpawns(currentCordList[i]);
+    //        if (result == false)
+    //        {
+    //            validPoints.Add(currentCordList[i]);
+    //        }
+    //    }
+
+    //    //Debug.Log(validPoints.Count + " Number of points in valid spawn list");
+    //    //for (int i = 0; i < validPoints.Count; i++)
+    //    //{
+    //    //    Debug.Log(validPoints[i] + " is a Valid point");
+    //    //}
+
+    //    int randomIndex = Random.Range(0, validPoints.Count);
+
+    //    Vector2 worldPosition = Camera.main.ViewportToWorldPoint(validPoints[randomIndex]);
+
+    //    InstantiateEnemy(worldPosition, EnemyDatabase.EnemyType.Space, threatLevel);
+    //}
+
+    //public void CreateGroundEnemy(float threatLevel)
+    //{
+    //    Vector2 spawnPoint = GetRandomPlanetSpawnPoint();
+
+    //    InstantiateEnemy(spawnPoint, EnemyDatabase.EnemyType.Ground, threatLevel);
+    //}
+
+
+
+    #endregion
 }
 
 [System.Serializable]

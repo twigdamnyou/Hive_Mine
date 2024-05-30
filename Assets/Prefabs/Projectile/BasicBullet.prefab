@@ -250,18 +250,26 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   entityType: 2
   ignorePlanetGravity: 1
+  startingStats: {fileID: 11400000, guid: 21295acb79ebb8e47bcdf5bbd593c4ea, type: 2}
   maxHealth: 20
   currentHealth: 0
-  maxShield: 20
-  currentShield: 0
-  armor: 5
+  debugMode: 0
   deathEffectPrefab: {fileID: 0}
   spawnEffectPrefab: {fileID: 0}
   projectileSpeed: 1000
+  projectileRotationSpeed: 250
   projectileLifeTime: 3
   projectileProperties: 
   maxChain: 1
   chainingRange: 10
+  arcHeightY: 1
+  arcDuration: 1
+  arcCurve:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
   projectileCanMove: 1
 --- !u!61 &5815835677345346221
 BoxCollider2D:

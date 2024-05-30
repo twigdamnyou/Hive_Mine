@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class Weapon : MonoBehaviour
@@ -16,8 +17,11 @@ public class Weapon : MonoBehaviour
     private Timer weaponCooldownTimer;
 
     private LineOfSight lineOfSight;
+    public Entity target;
 
     public LayerMask targetLayerMask;
+
+    public List<Upgrade> currentUpgrades = new List<Upgrade>();
 
     #region Built In Methods
 
@@ -53,7 +57,15 @@ public class Weapon : MonoBehaviour
         WaitForSeconds waiter = new WaitForSeconds(weaponData.shotDelay);
         for (int counter = 0; counter < weaponData.shotCount; counter++)
         {
-            Fire();
+            if (weaponData.payload != null)
+            {
+                Fire();
+            }
+            if (weaponData.entityPayload != null)
+            {
+                Debug.Log("Fireing entity weapon");
+                FireEntity();
+            }
             yield return waiter;
         }
     }
@@ -68,6 +80,12 @@ public class Weapon : MonoBehaviour
         activeProjectile.transform.eulerAngles += new Vector3(0f, 0f, Random.Range(-inaccuracy, inaccuracy));
 
         //canAttack = false;
+    }
+
+    private void FireEntity()
+    {
+        Debug.Log("Trying to 'Fire' an entity");
+        Entity activeEntity = Instantiate(weaponData.entityPayload, projectileSpawnLocation.position, projectileSpawnLocation.rotation);
     }
 
     private void ResetCooldown()
@@ -100,6 +118,14 @@ public class Weapon : MonoBehaviour
     {
         canAttack = true;
         weaponCooldownTimer.ResetTimer();
+    }
+
+    public float GetModifiedWeaponDamage()
+    {
+        //TODO: extract weapon damage from data, loop through upgrades and modify it based on any purchased upgrades
+        float baseDMG = weaponData.projectileDamage;
+
+        return baseDMG;
     }
 
     #endregion

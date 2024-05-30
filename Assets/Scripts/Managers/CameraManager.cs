@@ -14,8 +14,7 @@ public class CameraManager : MonoBehaviour
     [Header("Camera Variables")]
     public Transform followTarget;
     public float dampTime = 10f;
-    public float xOffset = 0;
-    public float yOffset = 0;
+    public float yOffsetPercentage = 0;
     public float rotationSpeed;
     private Coroutine zoomCorutine;
     private Coroutine panCorutine;
@@ -36,7 +35,8 @@ public class CameraManager : MonoBehaviour
 
 
     private bool orientToPlayer;
-    private float margin = 0.1f;
+    [SerializeField]
+    //private float margin = 0.1f;
     private Camera myCam;
 
 
@@ -50,34 +50,39 @@ public class CameraManager : MonoBehaviour
         myCam = GetComponent<Camera>();
     }
 
-
-
     private void LateUpdate()
     {
         if (followTarget == null)
         {
+            Debug.LogWarning("Camera has no follow target");
             return;
         }
 
         if (GameManager.minerDocked == true)
         {
+            //Debug.Log("Miner docked camera locked to TIC");
             followTarget = tic.transform;
+
+            Vector2 localUp = Vector2.zero;
+
+            if (GameManager.currentPlanet != null)
+            {
+                Vector2 localReletive = GameManager.GetTICPosition() - (Vector2)GameManager.currentPlanet.transform.position;
+                localUp = localReletive.normalized * yOffsetPercentage;
+
+                //Debug.Log("rotating camera relative to planet: " + localUp + " and adjusting for offset");
+            }
+
+            HandleOffset(localUp);
         }
         else
         {
+            Debug.Log("Miner undocked camera locked to Miner");
             followTarget = miner.transform;
+
+            Vector2 localUp = Vector2.zero;
+            HandleOffset(localUp);
         }
-
-        float targetX = followTarget.position.x + xOffset;
-        float targetY = followTarget.position.y + yOffset;
-
-        if (Mathf.Abs(transform.position.x - targetX) > margin)
-            targetX = Mathf.Lerp(transform.position.x, targetX, 1 / dampTime * Time.deltaTime);
-
-        if (Mathf.Abs(transform.position.y - targetY) > margin)
-            targetY = Mathf.Lerp(transform.position.y, targetY, 1 / dampTime * Time.deltaTime);
-
-        transform.position = new Vector3(targetX, targetY, transform.position.z);
 
         HandleRotation();
     }
@@ -94,6 +99,21 @@ public class CameraManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Handles camera rotation in relation to the current plannet and offsets the camera when on planet
+    /// </summary>
+    private void HandleOffset(Vector2 offset)
+    {
+        float targetX = followTarget.position.x;
+        float targetY = followTarget.position.y;
+
+        targetX = Mathf.Lerp(transform.position.x, targetX + offset.x, 1 / dampTime * Time.deltaTime);
+        targetY = Mathf.Lerp(transform.position.y, targetY + offset.y, 1 / dampTime * Time.deltaTime);
+
+        //Debug.Log(localUp.normalized);
+        transform.position = new Vector3(targetX, targetY, transform.position.z);
+    }
+
     private void RotateTo(Quaternion desiredRotation, float modifier = 1f)
     {
         Quaternion rot = Quaternion.Slerp(transform.rotation, desiredRotation, Time.deltaTime * rotationSpeed * modifier);
@@ -106,7 +126,7 @@ public class CameraManager : MonoBehaviour
     {
         //Debug.Log("Camera Current Zoom: " + myCam.orthographicSize);
         //Debug.Log("Incoming Zoom: " + zoom);
-        
+
         while (myCam.orthographicSize != zoom)
         {
             currentlyZooming = true;
@@ -118,25 +138,25 @@ public class CameraManager : MonoBehaviour
         currentlyZooming = false;
     }
 
-    private IEnumerator ChangeOffset(float xOffset, float yOffset)
-    {
-        //Debug.Log("initiating panning. offset: X " + xOffset + " Y " + yOffset);
-        while (this.xOffset != xOffset || this.yOffset != yOffset)
-        {
-            //Debug.Log("Panning");
-            currentlyPanning = true;
-            float targetXOffset = Mathf.MoveTowards(this.xOffset, xOffset, Time.deltaTime * zoomSpeed);
-            float targetYOffset = Mathf.MoveTowards(this.yOffset, yOffset, Time.deltaTime * zoomSpeed);
+    //private IEnumerator ChangeOffset(float xOffset, float yOffset)
+    //{
+    //    //Debug.Log("initiating panning. offset: X " + xOffset + " Y " + yOffset);
+    //    while (this.xOffset != xOffset || this.yOffset != yOffset)
+    //    {
+    //        //Debug.Log("Panning");
+    //        currentlyPanning = true;
+    //        float targetXOffset = Mathf.MoveTowards(this.xOffset, xOffset, Time.deltaTime * zoomSpeed);
+    //        float targetYOffset = Mathf.MoveTowards(this.yOffset, yOffset, Time.deltaTime * zoomSpeed);
 
-            this.xOffset = targetXOffset;
-            this.yOffset = targetYOffset;
+    //        this.xOffset = targetXOffset;
+    //        this.yOffset = targetYOffset;
 
-            yield return new WaitForEndOfFrame();
-            //Debug.Log("Zooming toward: " + zoom);
-        }
-        
-        currentlyPanning = false;
-    }
+    //        yield return new WaitForEndOfFrame();
+    //        //Debug.Log("Zooming toward: " + zoom);
+    //    }
+
+    //    currentlyPanning = false;
+    //}
 
     public static void ActivateRotation(float zoom, ZoomContext zoomContext)
     {
@@ -157,9 +177,9 @@ public class CameraManager : MonoBehaviour
             Instance.StopCoroutine(Instance.panCorutine);
         }
 
-        Vector2 desiredOffset = Instance.GetOffsetValuesByContext(zoomContext);
+        //Vector2 desiredOffset = Instance.GetOffsetValuesByContext(zoomContext);
 
-        Instance.panCorutine = Instance.StartCoroutine(Instance.ChangeOffset(desiredOffset.x, desiredOffset.y));
+        //Instance.panCorutine = Instance.StartCoroutine(Instance.ChangeOffset(desiredOffset.x, desiredOffset.y));
     }
 
     public Vector2 GetOffsetValuesByContext(ZoomContext context)
@@ -169,7 +189,7 @@ public class CameraManager : MonoBehaviour
             case ZoomContext.Space:
                 return Vector2.zero;
             case ZoomContext.PlanetSurface:
-                return new Vector2(-8f, 0f);    
+                return Vector2.zero;
             case ZoomContext.Miner:
                 return Vector2.zero;
             default:

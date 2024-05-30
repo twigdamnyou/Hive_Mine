@@ -16,6 +16,11 @@ public static class EventManager
         MinerUndocked,
         TICUndocked,
         EquipmentCreated,
+        WaveStarted,
+        WaveEnded,
+        PlayerLeftAtmosphere,
+        PlayerEnteredAtmosphere,
+
     }
 
     private static Dictionary<GameEvent, List<EventListener>> eventDictionary = new Dictionary<GameEvent, List<EventListener>>();

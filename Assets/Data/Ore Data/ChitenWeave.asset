@@ -13,5 +13,6 @@ MonoBehaviour:
   m_Name: ChitenWeave
   m_EditorClassIdentifier: 
   itemName: ChitenWeave
-  itemIcon: {fileID: -494707834, guid: 75a171d877bdf684baad747c31c54c4e, type: 3}
+  itemIcon: {fileID: -946969479, guid: 75a171d877bdf684baad747c31c54c4e, type: 3}
   oreType: 3
+  prefab: {fileID: 3827878033633164138, guid: 177721a9477db25478b114389c5ee4e6, type: 3}

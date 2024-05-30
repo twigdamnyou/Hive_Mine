@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 06343d6c33d233546a2a008359a411cc, type: 3}
+  m_Name: TeslaCannon
+  m_EditorClassIdentifier: 
+  payload: {fileID: 121305188229069, guid: 8638b63045abd2b408f8ae9340467ae2, type: 3}
+  keyBinding: 0
+  inputButton: Fire1
+  weaponName: MachineGun
+  weaponDescription: 
+  weaponCooldown: 0.1
+  weaponAccuracy: 1
+  shotDelay: 0
+  shotCount: 1
+  projectileDamage: 1

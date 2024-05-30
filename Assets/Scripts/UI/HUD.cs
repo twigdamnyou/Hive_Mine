@@ -44,7 +44,7 @@ public class HUD : BasePannel
                 SetInitialShieldStats();
                 break;
             case "Dome Shield":
-                Debug.Log("Creating Domeshield UI");
+                //Debug.Log("Creating Domeshield UI");
                 SetInitialDomeShieldStats();
                 break;
         }
@@ -100,7 +100,7 @@ public class HUD : BasePannel
 
         //currentHealthText.text = "" + newCurrentHealth;
 
-        healthBar.SetBarCurrent(newCurrentHealth / player.maxHealth);
+        healthBar.SetBarCurrent(newCurrentHealth / player.MyStats[Stat.Health]);
     }
 
     private void SetInitialShieldStats()
@@ -138,15 +138,15 @@ public class HUD : BasePannel
         if (target != player)
             return;
         float valueChanged = eventData.GetFloat("ChangeValue");
-        float newCurrentShield = eventData.GetFloat("CurrentTotal") - valueChanged;
+        float newCurrentShield = eventData.GetFloat("CurrentTotal");
         string stat = eventData.GetString("StatType");
         switch (stat)
         {
             case "Shield":
-                shieldBar.SetBarCurrent(newCurrentShield / InventoryManager.instance.shieldUpgrade.MaxShield);
+                shieldBar.SetBarCurrent(newCurrentShield / InventoryManager.instance.shieldUpgrade.EquipmentStats.GetStat(Stat.MaxShield));
                 break;
             case "Dome Shield":
-                domeShieldBar.SetBarCurrent(newCurrentShield / InventoryManager.instance.domeShieldUpgade.MaxShield);
+                domeShieldBar.SetBarCurrent(newCurrentShield / InventoryManager.instance.domeShieldUpgade.EquipmentStats.GetStat(Stat.MaxShield));
                 break;
         }
 

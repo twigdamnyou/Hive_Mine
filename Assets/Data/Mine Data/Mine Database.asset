@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac3b4fb9560a8554fa9941c59a0fd79d, type: 3}
+  m_Name: Mine Database
+  m_EditorClassIdentifier: 
+  mineData:
+  - prefab: {fileID: 982287264899980127, guid: 8b0e808b6f344b14382f501b0a1ba3ac, type: 3}
+    mineSize: 0
+    featureType: 1
+  - prefab: {fileID: 982287264899980127, guid: 05c42b65f392d3549b50708fea02d6cd, type: 3}
+    mineSize: 0
+    featureType: 0

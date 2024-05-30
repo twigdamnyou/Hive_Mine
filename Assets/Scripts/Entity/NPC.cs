@@ -29,5 +29,12 @@ public class NPC : Entity
         Destroy(gameObject);
     }
 
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (Brain.alwaysOnBehaviors.Contains(AIBrain.Behavior.DeathOnContact) == false)
+            return;
 
+        if(collision.gameObject.layer == 10)
+            Die();
+    }
 }

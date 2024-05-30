@@ -18,7 +18,6 @@ public class Turret : MonoBehaviour
     [Range(0, 179)] public float RightLimit = 120f;
     public Vector2 clampVector = new Vector2(-120f, 120f);
 
-
     [Header("Behavior")]
     [Tooltip("When idle, the turret does not aim at anything and simply points forwards.")]
     public bool isIdle = false;

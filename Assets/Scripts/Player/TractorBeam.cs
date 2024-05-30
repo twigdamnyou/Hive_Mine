@@ -1,17 +1,14 @@
-using System.Collections;
-using System.Collections.Generic;
-using System.Net;
-using Unity.Burst.CompilerServices;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class TractorBeam : MonoBehaviour
 {
     [Header("Laser Components")]
-    public float maxLaserDistance = 20f;
-    public float vacumForce = 50f;
     public LineRenderer lineRenderer;
     public Transform firePoint;
+
+    public Stats MyStats { get; private set; }
+    [Header("Stat Definitions")]
+    public StatDataGroup startingStats;
 
     [Header("Masks")]
     public LayerMask diggingMask;
@@ -28,6 +25,11 @@ public class TractorBeam : MonoBehaviour
     public GameObject owner;
 
     public Collider2D minerOreCollector;
+
+    private void Awake()
+    {
+        MyStats = new Stats(startingStats);
+    }
 
     private void Start()
     {
@@ -68,6 +70,7 @@ public class TractorBeam : MonoBehaviour
 
     private void ShootVacum()
     {
+        float maxLaserDistance = MyStats.GetStat(Stat.MaxLaserDistance);
         RaycastHit2D hit = Physics2D.Raycast(firePoint.position, firePoint.up, maxLaserDistance, diggingMask);
         if (hit.collider != null)
         {
@@ -110,7 +113,7 @@ public class TractorBeam : MonoBehaviour
         Rigidbody2D lootBody = hit.GetComponent<Rigidbody2D>();
         if (lootBody != null)
         {
-            lootBody.AddForce(direction * Time.fixedDeltaTime * vacumForce);
+            lootBody.AddForce(direction * Time.fixedDeltaTime * MyStats.GetStat(Stat.VacumForce));
         }
     }
 
@@ -132,13 +135,13 @@ public class TractorBeam : MonoBehaviour
     {
         if (minerInBeam == false || emptyContainerTimer == null)
         {
-            Debug.Log((emptyContainerTimer == null) + " is the null state of timer " + owner.tag);
-            Debug.Log(minerInBeam + " is the state of miner in beam " + owner.tag);
+            //Debug.Log((emptyContainerTimer == null) + " is the null state of timer " + owner.tag);
+            //Debug.Log(minerInBeam + " is the state of miner in beam " + owner.tag);
             return;
         }
-           
 
-        Debug.Log("updating the backpack empty clock");
+
+        //Debug.Log("updating the backpack empty clock");
         emptyContainerTimer.UpdateClock();
     }
 

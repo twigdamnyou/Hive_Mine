@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Unity.Mathematics;
 using UnityEngine;
 using static OreClass;
+using static UnityEngine.Rendering.DebugUI;
 
 public class Player : Entity
 {
@@ -25,7 +26,7 @@ public class Player : Entity
 
     protected override void OnEnable()
     {
-        Debug.Log("Enabling player");
+        //Debug.Log("Enabling player");
         base.OnEnable();
         HUD hud = PannelManager.GetPanel("HUD") as HUD;
         hud.SetupBars();
@@ -85,23 +86,59 @@ public class Player : Entity
 
     #region Stat Changes
 
-    public override void AdjustHealth(float value)
+    //public override void AdjustHealth(float value)
+    //{
+    //    DomeShield domeShield = InventoryManager.instance.domeShieldUpgade;
+    //    if (domeShield != null && domeShield.EquipmentStats.GetStat(Stat.Shield) > 0f && domeShield.IsActive == true)
+    //    {
+    //        domeShield.AdjustShield(value, "Dome Shield");
+    //        return;
+    //    }
+
+    //    Shield shield = InventoryManager.instance.shieldUpgrade;
+    //    if (shield != null && shield.EquipmentStats.GetStat(Stat.Shield) > 0f)
+    //    {
+    //        shield.AdjustShield(value, "Shield");
+    //        return;
+    //    }
+
+    //    base.AdjustHealth(value);
+    //}
+
+    public override float HandleShields(float incomingDamage, Entity source)
     {
+        float leftoverDamage = incomingDamage;
         DomeShield domeShield = InventoryManager.instance.domeShieldUpgade;
-        if (domeShield != null && domeShield.CurrentShield > 0f && domeShield.IsActive == true)
+        if (domeShield != null && domeShield.EquipmentStats.GetStat(Stat.Shield) > 0f && domeShield.IsActive == true)
         {
-            domeShield.AdjustShield(value, "Dome Shield");
-            return;
+            domeShield.AdjustShield(leftoverDamage, "Dome Shield", source);
+            float remainingDomeShield = domeShield.EquipmentStats.GetStat(Stat.Shield);
+            if (remainingDomeShield < 0f)
+            {
+                leftoverDamage -= remainingDomeShield;
+            }
+            else
+            {
+                return 0f;
+            }
         }
 
         Shield shield = InventoryManager.instance.shieldUpgrade;
-        if (shield != null && shield.CurrentShield > 0f)
+        if (shield != null && shield.EquipmentStats.GetStat(Stat.Shield) > 0f)
         {
-            shield.AdjustShield(value, "Shield");
-            return;
+            shield.AdjustShield(leftoverDamage, "Shield", source);
+            float remainingShield = shield.EquipmentStats.GetStat(Stat.Shield);
+            if (remainingShield < 0f)
+            {
+                leftoverDamage -= remainingShield;
+            }
+            else
+            {
+                return 0f;
+            }
         }
 
-        base.AdjustHealth(value);
+        return leftoverDamage;
     }
 
     #endregion

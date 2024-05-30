@@ -16,6 +16,8 @@ public class EventData
     private Dictionary<string, Entity> _entities;
     private Dictionary<string, Weapon> _weapons;
     private Dictionary<string, MineEntrance> _mineEntrances;
+    private Dictionary<string, Planet> _planet;
+    private Dictionary<string, Stat> _stat;
 
 
     #region CONSTRUCTION
@@ -131,6 +133,22 @@ public class EventData
             _mineEntrances = new Dictionary<string, MineEntrance>();
 
         _mineEntrances.Add(key, value);
+    }
+
+    public void AddPlanet(string key, Planet value)
+    {
+        if (_planet == null)
+            _planet = new Dictionary<string, Planet>();
+
+        _planet.Add(key, value);
+    }
+
+    public void AddStat(string key, Stat value)
+    {
+        if (_stat == null)
+            _stat = new Dictionary<string, Stat>();
+
+        _stat.Add(key, value);
     }
 
     #endregion
@@ -266,6 +284,17 @@ public class EventData
 
         return mineEntrance;
     }
+
+    public Stat GetStat(string key)
+    {
+        if (_stat == null || !_stat.TryGetValue(key, out Stat stat))
+        {
+            return Stat.None;
+        }
+
+        return stat;
+    }
+
 
     #endregion
 }

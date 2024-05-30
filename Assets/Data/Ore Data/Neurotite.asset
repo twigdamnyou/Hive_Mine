@@ -15,3 +15,4 @@ MonoBehaviour:
   itemName: Neurotite
   itemIcon: {fileID: 1711220467, guid: 75a171d877bdf684baad747c31c54c4e, type: 3}
   oreType: 5
+  prefab: {fileID: 3827878033633164138, guid: e6e33d4d0381ef24c89effe8b2f2e286, type: 3}

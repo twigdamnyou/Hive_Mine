@@ -13,7 +13,6 @@ public class BasePannel : MonoBehaviour
     public float fadeModifier = 1f;
     public bool IsOpen { get { return view.activeInHierarchy; } }
 
-
     protected virtual void Awake()
     {
         view = transform.Find("View").gameObject;

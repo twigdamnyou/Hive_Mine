@@ -2,8 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
-using static UnityEngine.EventSystems.EventTrigger;
 using System;
+using AYellowpaper.SerializedCollections;
 
 public class InventoryManager : MonoBehaviour
 {
@@ -26,6 +26,9 @@ public class InventoryManager : MonoBehaviour
     public Shield shieldUpgrade;
     public TICTractorBeam ticTractorBeam;
     public DomeShield domeShieldUpgade;
+
+    [SerializedDictionary("Equipment Name" , "Stats")]
+    public SerializedDictionary<string, StatDataGroup> equipmentStats = new SerializedDictionary<string, StatDataGroup>();
 
     public LayerMask earthquakeDigMask;
 
@@ -68,6 +71,7 @@ public class InventoryManager : MonoBehaviour
     {
         EventManager.AddListener(EventManager.GameEvent.TICDocked, OnTICDocked);
         EventManager.AddListener(EventManager.GameEvent.TICUndocked, OnTICUndocked);
+        EventManager.AddListener(EventManager.GameEvent.WaveEnded, ResetShield);
     }
 
     private void OnDisable()
@@ -325,7 +329,7 @@ public class InventoryManager : MonoBehaviour
     #region EarthquakeMachine
     public void CreateEarthquakeMachine()
     {
-        earthquakeMachine = new EarthquakeMachine("Earthquake Machine", "", GameManager.instance.player, 5f, 15f, earthquakeDigMask);
+        earthquakeMachine = new EarthquakeMachine("Earthquake Machine", "", GameManager.instance.player, 5f, 15f, earthquakeDigMask, equipmentStats["EarthquakeMachine"]);
         SendCreateEquipmentEvent("Earthquake Machine");
     }
 
@@ -349,10 +353,9 @@ public class InventoryManager : MonoBehaviour
 
     #region ShieldUpgrade
 
-
     public void CreateShield()
     {
-        shieldUpgrade = new Shield("Shield", "", GameManager.instance.player, 25f);
+        shieldUpgrade = new Shield("Shield", "", GameManager.instance.player, equipmentStats["Shield"]);
         SendCreateEquipmentEvent("Shield");
         ActivateShield();
     }
@@ -373,13 +376,19 @@ public class InventoryManager : MonoBehaviour
         }
     }
 
+    public void ResetShield(EventData data)
+    {
+        shieldUpgrade.ResetShieldToMax("Shield");
+        Debug.Log("attempting to reset shields");
+    }
+
     #endregion
 
     #region TICTractorBeam
 
     public void CreateTICTractorBeam()
     {
-        ticTractorBeam = new TICTractorBeam("Tractor Beam", "", GameManager.instance.player);
+        ticTractorBeam = new TICTractorBeam("Tractor Beam", "", GameManager.instance.player, equipmentStats["TICTractorBeam"]);
         SendCreateEquipmentEvent("Tractor Beam");
     }
 
@@ -416,7 +425,7 @@ public class InventoryManager : MonoBehaviour
 
     public void CreateDomeShield()
     {
-        domeShieldUpgade = new DomeShield("Dome Shield", "", GameManager.instance.player, 25f);
+        domeShieldUpgade = new DomeShield("Dome Shield", "", GameManager.instance.player, equipmentStats["DomeShield"]);
         SendCreateEquipmentEvent("Dome Shield");
     }
 

@@ -160,6 +160,13 @@ public static class TargetUtilities
         myTransform.rotation = Quaternion.RotateTowards(myTransform.rotation, targetRotation, speed * Time.fixedDeltaTime);
     }
 
+    public static void RotateSmoothlyTowardAngle(float angle, Transform myTransform, float speed)
+    {
+        Quaternion targetRotation = Quaternion.Euler(0f, 0f, angle);
+
+        myTransform.rotation = targetRotation; //Quaternion.RotateTowards(myTransform.rotation, targetRotation, speed * Time.fixedDeltaTime);
+    }
+
     public static Quaternion GetClampedRotation(Vector2 targetPosition, Transform myTransform, float speed, Vector2 clamp)
     {
         float rotZ = GetRotationAngleTowardTarget(targetPosition, myTransform.position);
@@ -226,4 +233,34 @@ public static class TargetUtilities
         return Random.Range(0, list.Count);
     }
 
+    public static float CalculateAngleOfArc(float x, float y, float gravity, float force, bool preferSmallAng)
+    {
+        float innerSq = Mathf.Pow(force, 4) - gravity * (gravity * x * x + 2 * y * force * force);
+        if (innerSq < 0)
+        {
+            return float.NaN;
+        }
+        float innerAtan;
+        if (preferSmallAng)
+        {
+            innerAtan = (force * force - Mathf.Sqrt(innerSq)) / (gravity * x);
+        }
+        else
+        {
+            innerAtan = (force * force + Mathf.Sqrt(innerSq)) / (gravity * x);
+        }
+        float res = Mathf.Atan(innerAtan) * Mathf.Rad2Deg;
+        return res;
+    }
+
+
+    /// This is a 2D version of Quaternion.LookAt; it returns a quaternion
+	/// that makes the local +X axis point in the given forward direction.
+	/// 
+	/// forward direction
+	/// Quaternion that rotates +X to align with forward
+    public static Quaternion LookAt2D(Vector2 forward)
+    {
+        return Quaternion.Euler(0, 0, Mathf.Atan2(forward.y, forward.x) * Mathf.Rad2Deg);
+    }
 }

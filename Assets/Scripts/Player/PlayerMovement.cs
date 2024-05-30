@@ -13,11 +13,6 @@ public class PlayerMovement : EntityMovement
     }
 
     [Header("Movement Properties")]
-    public float spaceThrustSpeed = 3000f;
-    public float spaceRotationSpeed = 200f;
-    public float planetHorizontalSpeed = 500f;
-    public float escapePlanetLaunchSpeed = 2000f;
-    public float basePlanetLaunchSpeed = 1000f;
     private Coroutine launchSequance;
     private bool isLaunching;
 
@@ -39,9 +34,18 @@ public class PlayerMovement : EntityMovement
         {
             if (isLaunching == false)
             {
-                launchSequance = StartCoroutine(SmoothlyAdjustThrustForce(escapePlanetLaunchSpeed, 10f));
+                launchSequance = StartCoroutine(SmoothlyAdjustThrustForce());
             }
         }
+    }
+    private void OnEnable()
+    {
+        EventManager.AddListener(EventManager.GameEvent.PlayerLeftAtmosphere, LeftAtmosohere);
+    }
+
+    private void OnDisable()
+    {
+        
     }
 
     protected override void Move()
@@ -98,7 +102,6 @@ public class PlayerMovement : EntityMovement
                 isLaunching = false;
             }
             playerMode = PlayerMode.Space;
-            basePlanetLaunchSpeed = 1000f;
             //myCollider.enabled = false;
             //StartCoroutine(ColliderReenabler());
         }
@@ -110,38 +113,42 @@ public class PlayerMovement : EntityMovement
 
     private void ForwardThrust()
     {
-        Vector2 wantedPosition = transform.up * direction.y * spaceThrustSpeed * Time.fixedDeltaTime;
+        Vector2 wantedPosition = transform.up * direction.y * Owner.MyStats[Stat.SpaceThrustSpeed] * Time.fixedDeltaTime;
         MyBody.AddForce(wantedPosition, ForceMode2D.Force);
     }
 
     public void Rotation()
     {
-        float rotSpeed = direction.x * spaceRotationSpeed * Time.fixedDeltaTime;
+        float rotSpeed = direction.x * Owner.MyStats[Stat.SpaceRotationSpeed] * Time.fixedDeltaTime;
         MyBody.AddTorque(-rotSpeed);
     }
 
     private void HorizontalMove()
     {
-        Vector2 wantedPosition = transform.right * direction.x * planetHorizontalSpeed * Time.fixedDeltaTime;
+        Vector2 wantedPosition = transform.right * direction.x * Owner.MyStats[Stat.PlaneteryHorizontalSpeed] * Time.fixedDeltaTime;
         MyBody.AddForce(wantedPosition, ForceMode2D.Force);
     }
 
     private void VerticleLaunch()
     {
-        Vector2 wantedPosition = transform.up * direction.y * basePlanetLaunchSpeed * Time.fixedDeltaTime;
+        Vector2 wantedPosition = transform.up * direction.y * Owner.MyStats[Stat.ActivePlanetLaunchSpeed] * Time.fixedDeltaTime;
         MyBody.AddForce(wantedPosition, ForceMode2D.Force);
     }
 
-    private IEnumerator SmoothlyAdjustThrustForce(float targetThrustForce, float speed = 1f)
+    private IEnumerator SmoothlyAdjustThrustForce()
     {
         isLaunching = true;
-        while (basePlanetLaunchSpeed != targetThrustForce)
+        
+        while (Owner.MyStats[Stat.ActivePlanetLaunchSpeed] != Owner.MyStats[Stat.EscapePlanetLaunchSpeed])
         {
-            float newThrust = Mathf.MoveTowards(basePlanetLaunchSpeed, targetThrustForce, Time.fixedDeltaTime * speed);
-            basePlanetLaunchSpeed = newThrust;
+            float newThrust = Mathf.MoveTowards(Owner.MyStats[Stat.ActivePlanetLaunchSpeed], Owner.MyStats[Stat.EscapePlanetLaunchSpeed], Time.fixedDeltaTime * 10f);
+            StatManager.SetStatToValue(Owner, Owner, Stat.ActivePlanetLaunchSpeed, newThrust);
             yield return new WaitForEndOfFrame();
-            //Debug.Log("Base Speed: " + basePlanetLaunchSpeed);
+            Debug.Log("Base Speed: " + Owner.MyStats[Stat.ActivePlanetLaunchSpeed]);
         }
+        yield return new WaitForSeconds(0.5f);
+
+        
     }
 
     public void SpaceMove()
@@ -172,4 +179,10 @@ public class PlayerMovement : EntityMovement
     }
 
     #endregion
+
+    public void LeftAtmosohere(EventData data)
+    {
+        StopCoroutine(SmoothlyAdjustThrustForce());
+        StatManager.SetStatToValue(Owner, Owner, Stat.ActivePlanetLaunchSpeed, Owner.MyStats[Stat.BasePlanetLaunchSpeed]);
+    }
 }

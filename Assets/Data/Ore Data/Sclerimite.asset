@@ -13,5 +13,6 @@ MonoBehaviour:
   m_Name: Sclerimite
   m_EditorClassIdentifier: 
   itemName: Sclerimite
-  itemIcon: {fileID: -759463230, guid: 75a171d877bdf684baad747c31c54c4e, type: 3}
+  itemIcon: {fileID: -303904114, guid: 75a171d877bdf684baad747c31c54c4e, type: 3}
   oreType: 4
+  prefab: {fileID: 3827878033633164138, guid: 55b837efd89118046a1bef360c20643a, type: 3}
